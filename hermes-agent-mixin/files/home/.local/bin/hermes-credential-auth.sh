@@ -60,6 +60,10 @@ HERMES_BIN="$HOME/.local/bin/hermes"
 OAUTH_SENTINEL=sk-ant-oat01-proxy-managed
 
 mkdir -p "$STATE_DIR"
+# The Codex inference endpoint uses a self-managed OAuth bearer token. The
+# sandbox HTTP proxy can interfere with it, so the gateway must bypass the
+# proxy only for chatgpt.com. Keep other provider proxy paths unchanged.
+python3 "$HOME/.local/bin/hermes-codex-proxy-env.py" "$STATE_DIR"
 rm -f "$AUTH_ENV_FILE"
 
 # Three credential states, and conflating them is what makes the sandbox
