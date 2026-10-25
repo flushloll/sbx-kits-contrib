@@ -47,9 +47,11 @@ is not part of this kit, not that something is broken.
 
 ## Prerequisites
 
-An API key for at least one supported provider — Anthropic, OpenAI, or
-OpenRouter. Register it once with `sbx secret set-custom`; the value is stored
-in the host secret store and never enters the sandbox directly.
+Use a host-managed API key for Anthropic, OpenAI API, or OpenRouter, **or**
+a ChatGPT subscription with Hermes' Codex OAuth device-code login. API keys
+configured with `sbx secret set-custom` remain in the host secret store;
+a Hermes-initiated Codex OAuth login instead stores real tokens inside the
+sandbox (see the security note below).
 
 ## Setup
 
@@ -118,70 +120,58 @@ intercepts it, looks up the matching credential on the host, and injects the
 auth header. The placeholder value (e.g. `sk-ant-<random>`) in the container
 environment is never sent to the provider.
 
-### OpenAI Codex via ChatGPT subscription (self-managed OAuth, opt-in)
+### OpenAI Codex via ChatGPT subscription (supported by default)
 
-The proxy-managed `OPENAI_API_KEY` above is for `api.openai.com` API-key
-requests. It is **not** a ChatGPT/Codex subscription credential. Hermes can
-also authenticate using its own Codex OAuth grant, but this kit does **not**
-configure or enable that route by default.
+This v3 kit prepares Hermes' **ChatGPT/Codex OAuth** network route by default,
+without requiring a host-managed OpenAI API key or a manual proxy exception.
+The network allowlist includes the exact hosts for Hermes' device-code
+sign-in/refresh (\`auth.openai.com\`) and Codex inference
+(\`chatgpt.com\`). At sandbox startup, the credential-auth hook preserves
+existing proxy exclusions and adds \`chatgpt.com\` to **both** \`NO_PROXY\`
+and \`no_proxy\` in \`~/.hermes/.env\`. Hermes loads that file when it starts
+its independent inference gateway.
 
-**Security boundary:** A Hermes-initiated `openai-codex` OAuth login stores
-a real access/refresh credential in the sandbox's `~/.hermes/auth.json`.
-Unlike the kit's proxy-managed API keys, that credential is readable by code
-running as the sandbox user. Only opt into this arrangement if you explicitly
-accept that difference and have configured an appropriate network policy.
-Do not copy tokens into a README, an environment variable, or a diagnostic log.
+Only \`chatgpt.com\` is excluded from the environment HTTP proxy:
+\`api.openai.com\`, \`api.anthropic.com\`, and \`openrouter.ai\` keep their
+existing proxy-managed credential behavior. A proxy bypass is **not** a
+network-policy bypass; the exact-host sandbox allowlist still governs
+outbound connectivity.
 
-For an explicitly authorized self-managed OAuth setup:
+To use your ChatGPT subscription, explicitly sign in with Hermes:
 
-1. Ensure the sandbox's network policy permits the required **exact** endpoints
-   for Codex inference and OAuth login/refresh
-   (`chatgpt.com` and `auth.openai.com`, respectively). They are **not**
-   in this kit's default runtime allowlist. Review the trust and egress
-   implications before modifying the policy; `NO_PROXY` does **not** grant
-   network access or change the sandbox allowlist.
-2. After completing Hermes' own `openai-codex` login, if inference fails with
-   `HTTP 401: Could not parse your authentication token` while a direct
-   authenticated catalog request succeeds, inspect the **gateway's** network
-   configuration, not only your interactive shell's.
-3. In a setup where the environment HTTP proxy interferes with the OAuth
-   bearer token, append `chatgpt.com` to **both** `NO_PROXY` and
-   `no_proxy` in `~/.hermes/.env`, preserving any existing comma-separated
-   exclusions. This is a targeted **direct-connection exception**, not a
-   blanket proxy disable. Do not exclude `api.openai.com`: its managed API-key
-   injection remains a separate route. The direct-connection choice may change
-   what inspection or credential handling the HTTP proxy can provide.
-4. With no active turns, restart the Hermes gateway so the inference process
-   loads the updated environment; a new shell alone cannot change the running
-   gateway's configuration:
+\`\`\`console
+hermes auth add openai-codex --type oauth
+hermes --provider openai-codex -m gpt-6-luna -z "Reply with OK only."
+\`\`\`
 
-   ```console
-   hermes gateway status
-   hermes gateway restart --detach
-   hermes gateway status
-   ```
+\`gpt-6-luna\` worked in a verified sandbox reproduction; actual Codex model
+entitlements vary. An unsupported-model HTTP 400 is not an OAuth failure.
+An ordinary OpenAI API key is a **separate** form of authentication for
+\`api.openai.com\`, and does not grant ChatGPT Codex access.
 
-5. Test a **subscription-supported** model rather than assuming every OpenAI
-   API model is available to ChatGPT Codex:
+**Credential security:** Only the *network route* is enabled by default.
+The kit never performs a Codex OAuth login automatically. If you choose to
+sign in with Hermes, it stores a **real OAuth credential** under
+\`~/.hermes/auth.json\` inside the sandbox, where code running as the
+sandbox user can read it. This differs from the kit's host-managed API keys,
+which remain outside the sandbox. Use a sandbox you trust for that purpose
+and do not commit or log the OAuth store.
 
-   ```console
-   hermes --provider openai-codex -m gpt-6-luna -z "Reply with OK only."
-   ```
+**Existing running gateways:** A running Hermes gateway does not adopt
+changes to its parent shell's environment. If you upgraded an existing
+sandbox rather than creating a new one, restart the gateway when no
+turns are active:
 
-   The example model worked in one live investigation; entitlement and model
-   availability vary. An `HTTP 400` unsupported-model response is separate
-   from the original proxy/authentication failure.
+\`\`\`console
+hermes gateway restart --detach
+\`\`\`
 
-**Observed in a live sandbox (Hermes v0.22.5):** the same Codex OAuth grant
-returned `401` through the inherited HTTP proxy and `200` for the
-account-scoped model catalog over a direct connection. The gateway's launch
-environment contained HTTP proxy variables with no `chatgpt.com` exclusion.
-After a targeted exclusion and gateway restart, `gpt-6-luna` returned `OK`.
-The proxy's exact header transformation was not captured, so do not assume
-that every `401` is the same failure.
-
-This section documents a **manual, explicitly opted-in workaround**, not a
-change to the kit's default credentials, allowlist, or proxy behavior.
+**Verified diagnosis (Hermes v0.22.5):** the same valid Codex OAuth grant
+returned HTTP 401 through an inherited HTTP proxy and HTTP 200 for an
+account-scoped catalog request with direct transport. A gateway without
+the \`chatgpt.com\` exclusion failed; after adding the exclusion and restarting,
+\`gpt-6-luna\` returned \`OK\`. We did not capture the proxy's precise
+header transformation, so not every 401 necessarily has this cause.
 
 ### Anthropic: API key vs Claude subscription (OAuth)
 
