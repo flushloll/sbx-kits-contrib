@@ -107,6 +107,11 @@ capabilities:
           - openrouter.ai
           - '*.openrouter.ai'
           - api.openai.com
+          # ChatGPT subscription / Codex OAuth: these exact hosts are separate
+          # from api.openai.com's host-managed API-key injection. Hermes stores
+          # its own Codex OAuth grant only when a user explicitly signs in.
+          - auth.openai.com
+          - chatgpt.com
           - api.anthropic.com
           # The anthropic credential's OAuth token endpoint, for the refresh
           # the proxy performs once the access token expires.
@@ -278,6 +283,9 @@ capabilities:
           user: "1000"
           env:
             - HERMES_HOME
+            # Preserve sandbox-provided proxy exclusions in the Codex setup helper.
+            - NO_PROXY
+            - no_proxy
             - SBX_CRED_ANTHROPIC_MODE
             - SBX_CRED_OPENAI_MODE
             - SBX_CRED_OPENROUTER_MODE
