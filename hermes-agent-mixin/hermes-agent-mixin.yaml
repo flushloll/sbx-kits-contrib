@@ -100,6 +100,10 @@ capabilities:
           - openrouter.ai
           - '*.openrouter.ai'
           - api.openai.com
+          # Self-managed ChatGPT Codex OAuth requires login and inference hosts;
+          # keep API-key credential injection scoped to api.openai.com.
+          - auth.openai.com
+          - chatgpt.com
           - api.anthropic.com
           # The anthropic credential's OAuth token endpoint, for the refresh
           # the proxy performs once the access token expires.
@@ -238,6 +242,9 @@ capabilities:
           user: "1000"
           env:
             - HERMES_HOME
+            # Carry existing sandbox proxy exclusions into ~/.hermes/.env.
+            - NO_PROXY
+            - no_proxy
             - SBX_CRED_ANTHROPIC_MODE
             - SBX_CRED_OPENAI_MODE
             - SBX_CRED_OPENROUTER_MODE
