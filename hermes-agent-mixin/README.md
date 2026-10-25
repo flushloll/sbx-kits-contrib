@@ -68,6 +68,22 @@ own provider auto-detection routes to one of them with no real key behind it.
 The workload form has an entrypoint that sources the file directly; a mixin
 has no entrypoint, so `~/.profile` is the path.
 
+## Optional self-managed OpenAI Codex OAuth
+
+The mixin inherits the same trust boundary as the standalone workload: its
+proxy-managed `OPENAI_API_KEY` supports `api.openai.com` API-key requests, not
+the ChatGPT subscription's Codex OAuth token. The mixin does not add
+`chatgpt.com` or `auth.openai.com` to the default network policy, and does not
+persist a Codex OAuth credential on the user's behalf.
+
+For a deliberately enabled self-managed Codex OAuth setup, consult the
+[standalone kit's opt-in guide](../hermes-agent/README.md#openai-codex-via-chatgpt-subscription-self-managed-oauth-opt-in).
+It documents the network permissions, on-disk credential exposure,
+`NO_PROXY` / `no_proxy` gateway exception, restart, and model-validation
+considerations. The same steps apply to the mixin; a `sh -lc` login shell
+alone does not update an already-running Hermes gateway.
+
+
 ## What it leaves to the base
 
 - **The launch command.** The mixin sets no `ENTRYPOINT`.
