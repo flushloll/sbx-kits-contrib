@@ -4,8 +4,8 @@
 Both v3 Hermes kits call this at sandbox startup. Hermes loads its user .env
 with override=True, including when a new gateway is started independently of
 the CLI. Only chatgpt.com bypasses the HTTP proxy; other providers keep their
-existing proxy-managed behavior. The network-policy allowlist remains enforced
-by the sandbox independently of NO_PROXY.
+existing proxy-managed behavior. The kit declares separate network-policy
+allowlist entries; direct-route enforcement must be verified by the runtime.
 """
 
 from __future__ import annotations
