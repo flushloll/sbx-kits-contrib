@@ -144,6 +144,7 @@ ENV HERMES_HOME=/home/agent/.hermes
 # hermes-agent.yaml) because that is what v2 did and it works either way.
 COPY --chown=agent:agent --chmod=0755 files/home/.local/bin/hermes-start.sh /home/agent/.local/bin/hermes-start.sh
 COPY --chown=agent:agent --chmod=0755 files/home/.local/bin/hermes-credential-auth.sh /home/agent/.local/bin/hermes-credential-auth.sh
+COPY --chown=agent:agent --chmod=0755 files/home/.local/bin/hermes-codex-proxy-env.py /home/agent/.local/bin/hermes-codex-proxy-env.py
 
 # A PATH convenience, kept from v2. Its original rationale -- "so the image's
 # own CMD works standalone, independent of the kit's files/home/ copy" -- no
