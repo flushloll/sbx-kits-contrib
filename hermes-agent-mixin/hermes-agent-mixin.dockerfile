@@ -105,6 +105,7 @@ RUN set -eu; \
 # mixin has no entrypoint, and the auth script already appends a source line
 # to ~/.profile, which is what a login shell picks up.
 COPY --chown=agent:agent --chmod=0755 files/home/.local/bin/hermes-credential-auth.sh /home/agent/.local/bin/hermes-credential-auth.sh
+COPY --chown=agent:agent --chmod=0755 files/home/.local/bin/hermes-codex-proxy-env.py /home/agent/.local/bin/hermes-codex-proxy-env.py
 
 USER root
 # v2's environment.variables plus the recipe's own HERMES_DISABLE_LAZY_INSTALLS.
@@ -130,6 +131,7 @@ RUN set -eux; \
     chown -R 1000:1000 /out/home/agent; \
     test -x /out/home/agent/.local/bin/hermes; \
     test -x /out/home/agent/.local/bin/hermes-credential-auth.sh; \
+    test -x /out/home/agent/.local/bin/hermes-codex-proxy-env.py; \
     mkdir -p /out/usr/local/bin; \
     ln -s /home/agent/.local/bin/hermes /out/usr/local/bin/hermes
 
