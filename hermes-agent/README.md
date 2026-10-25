@@ -133,9 +133,10 @@ its independent inference gateway.
 
 Only \`chatgpt.com\` is excluded from the environment HTTP proxy:
 \`api.openai.com\`, \`api.anthropic.com\`, and \`openrouter.ai\` keep their
-existing proxy-managed credential behavior. A proxy bypass is **not** a
-network-policy bypass; the exact-host sandbox allowlist still governs
-outbound connectivity.
+existing proxy-managed credential behavior. The kit also declares the two hosts in its sandbox network policy.
+`NO_PROXY` changes HTTP client routing, not those policy declarations;
+verify the runtime's enforcement on direct connections before relying on it
+as a security boundary.
 
 To use your ChatGPT subscription, explicitly sign in with Hermes:
 
